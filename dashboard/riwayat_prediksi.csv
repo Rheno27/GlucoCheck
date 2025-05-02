@@ -1,0 +1,2 @@
+gender,age,hypertension,heart_disease,smoking_history,bmi,hba1c,blood_glucose,prediction
+1,20,0,0,0,10.0,3.0,50.0,0
