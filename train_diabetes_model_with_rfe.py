@@ -1,12 +1,16 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.feature_selection import RFE
 from sklearn.metrics import accuracy_score
 import joblib
+
 
 # Load dataset
 df = pd.read_csv('dashboard/diabets_dataset_clean.csv')
@@ -37,6 +41,34 @@ test_accuracy = accuracy_score(y_test, y_test_pred)
 
 print("Train Accuracy:", train_accuracy)
 print("Test Accuracy:", test_accuracy)
+
+# Visualisasi Learning Curve untuk evaluasi overfitting dan underfitting
+train_sizes, train_scores, test_scores = learning_curve(
+    classifier, X_selected, y,
+    cv=5,
+    scoring='accuracy',
+    n_jobs=-1,
+    train_sizes=np.linspace(0.1, 1.0, 10),
+    shuffle=True,
+    random_state=42
+)
+
+# Hitung rata-rata skor
+train_mean = np.mean(train_scores, axis=1)
+test_mean = np.mean(test_scores, axis=1)
+
+# Plot learning curve
+plt.figure(figsize=(10, 6))
+plt.plot(train_sizes, train_mean, label='Train Accuracy', marker='o')
+plt.plot(train_sizes, test_mean, label='Validation Accuracy', marker='s')
+plt.title('Learning Curve untuk Evaluasi Overfitting/Underfitting')
+plt.xlabel('Jumlah Data Training')
+plt.ylabel('Akurasi')
+plt.grid(True)
+plt.legend(loc='best')
+plt.tight_layout()
+plt.show()
+
 
 # Save all components
 joblib.dump(classifier, 'model/diabetes_model.sav')

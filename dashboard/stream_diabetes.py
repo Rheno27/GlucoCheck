@@ -53,7 +53,6 @@ if st.button("Prediksi"):
         # Simpan hasil prediksi
         result_row = pd.DataFrame([[gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c, blood_glucose, prediction]],
                                 columns=["gender", "age", "hypertension", "heart_disease", "smoking_history", "bmi", "hba1c", "blood_glucose", "prediction"])
-
         if os.path.exists("riwayat_prediksi.csv"):
             result_row.to_csv("riwayat_prediksi.csv", mode='a', header=False, index=False)
         else:
