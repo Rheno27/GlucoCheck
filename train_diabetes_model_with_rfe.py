@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split, learning_curve
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.feature_selection import RFE
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 import joblib
 
 
@@ -20,6 +20,28 @@ y = df['diabetes']
 # Feature scaling
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
+
+# Train-test split tanpa RFE
+X_train_full, X_test_full, y_train_full, y_test_full = train_test_split(
+    X_scaled, y, test_size=0.2, stratify=y, random_state=2)
+
+# Model training tanpa RFE
+classifier_full = SVC(kernel='linear')
+classifier_full.fit(X_train_full, y_train_full)
+
+# Evaluasi akurasi
+y_train_full_pred = classifier_full.predict(X_train_full)
+y_test_full_pred = classifier_full.predict(X_test_full)
+
+train_acc_full = accuracy_score(y_train_full, y_train_full_pred)
+test_acc_full = accuracy_score(y_test_full, y_test_full_pred)
+
+print("=== Evaluasi Sebelum RFE ===")
+print("Train Accuracy (full):", train_acc_full)
+print("Test Accuracy (full):", test_acc_full)
+
+print("=== Classification Report Sebelum RFE ===")
+print(classification_report(y_test_full, y_test_full_pred))
 
 # Recursive Feature Elimination (select top 5 features)
 svc_estimator = SVC(kernel='linear')
@@ -41,6 +63,9 @@ test_accuracy = accuracy_score(y_test, y_test_pred)
 
 print("Train Accuracy:", train_accuracy)
 print("Test Accuracy:", test_accuracy)
+
+print("=== Classification Report Sesudah RFE ===")
+print(classification_report(y_test, y_test_pred))
 
 # Visualisasi Learning Curve untuk evaluasi overfitting dan underfitting
 train_sizes, train_scores, test_scores = learning_curve(
