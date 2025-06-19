@@ -9,10 +9,14 @@ import matplotlib.pyplot as plt
 model = joblib.load("../model/diabetes_model_svm_smote.sav")
 scaler = joblib.load("../model/scaler_svm_smote.sav")
 
+# Load dataset bersih untuk visualisasi
+df = pd.read_csv("diabetes_dataset_clean.csv")
+
+# Konfigurasi halaman
 st.set_page_config(
     page_title="GlukoChek",
     layout="wide",
-    page_icon="asset/diabetes_icon.png"
+    page_icon="🩺"
 )
 
 st.title('GlukoChek : Aplikasi Prediksi Diabetes')
@@ -27,43 +31,48 @@ with col1:
     heart_disease = st.selectbox("Penyakit Jantung", options=[0, 1], format_func=lambda x: "Tidak" if x == 0 else "Ya")
 
 with col2:
-    smoking_history = st.selectbox("Riwayat Merokok", options=[-1, 0, 1, 2, 3, 4],
-        format_func=lambda x: { -1: "Tidak Diketahui", 0: "Tidak Pernah", 1: "Mantan Perokok", 2: "Saat Ini", 3: "Bukan Saat Ini", 4: "Pernah" }.get(x, ""))
+    smoking_history = st.selectbox("Riwayat Merokok", options=[0, 1, 2, 3, 4],
+        format_func=lambda x: {
+            0: "Tidak Pernah", 
+            1: "Mantan Perokok", 
+            2: "Saat Ini", 
+            3: "Tidak Saat Ini", 
+            4: "Pernah"
+        }[x]
+    )
     bmi = st.number_input("BMI", min_value=10.0, max_value=60.0, step=0.1)
     hba1c = st.number_input("Level HbA1c", min_value=3.0, max_value=15.0, step=0.1)
     blood_glucose = st.number_input("Level Gula Darah", min_value=50.0, max_value=500.0, step=1.0)
 
-# Validasi input
-input_ready = all(val is not None for val in [gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c, blood_glucose])
-
-# Tombol prediksi
+# Prediksi
 if st.button("Prediksi", key="btn_prediksi"):
-    if not input_ready:
-        st.error("Harap isi semua kolom input sebelum melakukan prediksi.")
+    input_data = np.array([[gender, age, hypertension, heart_disease,
+                            smoking_history, bmi, hba1c, blood_glucose]])
+    input_scaled = scaler.transform(input_data)
+    prediction = model.predict(input_scaled)[0]
+
+    diagnosis = "✅ Anda **tidak** terindikasi diabetes." if prediction == 0 else "⚠️ Anda **terindikasi** diabetes."
+    st.success(f"Hasil: {diagnosis}")
+
+    # Simpan hasil ke CSV
+    result_row = pd.DataFrame([[gender, age, hypertension, heart_disease,
+                                smoking_history, bmi, hba1c, blood_glucose, prediction]],
+                              columns=["gender", "age", "hypertension", "heart_disease", "smoking_history",
+                                       "bmi", "hba1c", "blood_glucose", "prediction"])
+    if os.path.exists("riwayat_prediksi.csv"):
+        result_row.to_csv("riwayat_prediksi.csv", mode='a', header=False, index=False)
     else:
-        input_data = np.array([[gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c, blood_glucose]])
-        input_scaled = scaler.transform(input_data)
-        prediction = model.predict(input_scaled)[0]
-        
-        diagnosis = "✅ Anda tidak terindikasi diabetes." if prediction == 0 else "⚠️ Anda terindikasi diabetes."
-        st.success(f"Hasil: {diagnosis}")
-        
-        # Simpan hasil prediksi
-        result_row = pd.DataFrame([[gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c, blood_glucose, prediction]],
-                                  columns=["gender", "age", "hypertension", "heart_disease", "smoking_history", "bmi", "hba1c", "blood_glucose", "prediction"])
-        if os.path.exists("riwayat_prediksi.csv"):
-            result_row.to_csv("riwayat_prediksi.csv", mode='a', header=False, index=False)
-        else:
-            result_row.to_csv("riwayat_prediksi.csv", index=False)
+        result_row.to_csv("riwayat_prediksi.csv", index=False)
 
-        st.markdown("---")
-        st.write("### Riwayat Prediksi")
-        history = pd.read_csv("riwayat_prediksi.csv")
-        st.dataframe(history.tail(5))
+    # Tampilkan riwayat prediksi
+    st.markdown("---")
+    st.write("### Riwayat Prediksi")
+    history = pd.read_csv("riwayat_prediksi.csv")
+    history["prediction"] = history["prediction"].map({0: "Tidak Diabetes", 1: "Diabetes"})
+    st.dataframe(history.tail(5))
 
-# Visualisasi data
-if os.path.exists("diabets_dataset_clean.csv"):
-    df = pd.read_csv("diabets_dataset_clean.csv")
+# Visualisasi dataset
+if df is not None:
     st.markdown("---")
     st.write("### Visualisasi Dataset")
 
